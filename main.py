@@ -2,83 +2,67 @@ import pandas as pd
 from pyscript import document
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.neural_network import MLPClassifier
-from textblob import TextBlob
 
-# 1. Load Datasets
-try:
-    # Your original knowledge base
-    kb_data = pd.read_csv("data.csv") 
-    
-    # Your renamed word database
-    chat_data = pd.read_csv("unigram_freq.csv")
-    
-    # Mapping columns: unigram_freq usually uses 'word'
-    # We'll treat the 'word' column as our training text
-    train_text = chat_data['word'].astype(str).head(5000) # Using top 5k for speed
-    
-    # Creating dummy labels since frequency files don't have 'intents'
-    # This allows the NN to initialize properly
-    train_labels = ["vocabulary"] * len(train_text)
-    
-except Exception as e:
-    print(f"File loading error: {e}")
-    train_text = ['hello', 'hi', 'help', 'bye']
-    train_labels = ['greeting', 'greeting', 'help', 'farewell']
-
-# 2. Train the Neural Network
+# --- GLOBAL MODEL ASSETS ---
 vectorizer = CountVectorizer()
-X = vectorizer.fit_transform(train_text)
-y = train_labels
+clf = MLPClassifier(hidden_layer_sizes=(8, 8), max_iter=500)
 
-clf = MLPClassifier(hidden_layer_sizes=(10, 10), max_iter=500)
-clf.fit(X, y)
+def init_model():
+    try:
+        # Load unigram_freq.csv
+        df = pd.read_csv("unigram_freq.csv")
+        # Use top 2000 words as 'known' vocabulary for training
+        train_text = df['word'].astype(str).head(2000).tolist()
+        train_labels = ["recognized"] * len(train_text)
+        
+        # Add a few manual intents so it can actually "chat"
+        train_text += ["hello", "hi", "hey", "bye", "goodbye", "who are you"]
+        train_labels += ["greet", "greet", "greet", "exit", "exit", "info"]
+        
+        X = vectorizer.fit_transform(train_text)
+        clf.fit(X, train_labels)
+        
+        document.querySelector("#status").innerText = "Online"
+        document.querySelector("#status").className = "text-[10px] uppercase tracking-widest text-emerald-500"
+    except Exception as e:
+        print(f"Error: {e}")
+        document.querySelector("#status").innerText = "Offline / Error"
 
-# 3. Response Logic
-responses = {
-    'vocabulary': "I recognize that word from my unigram database!",
-    'greeting': "Hello! System online.",
-    'help': "I am running a neural network on your word frequency data.",
-    'unknown': "Input processed. That word exists in my neural pathways."
+# Responses Dictionary
+RESPONSES = {
+    "greet": "Hello! My neural network is active. How can I assist?",
+    "exit": "System standby. Goodbye!",
+    "info": "I am a browser-based AI running on Python and Scikit-Learn.",
+    "recognized": "I recognize that word from my unigram database!",
+    "unknown": "I processed that, but it's outside my current training data."
 }
 
 def process_message(event):
-    input_text = document.querySelector("#user-input").value
-    if not input_text: return
+    user_input = document.querySelector("#user-input").value
+    if not user_input: return
 
-    # Sentiment Analysis
-    analysis = TextBlob(input_text)
-    polarity = analysis.sentiment.polarity
-    
-    mood_badge = document.querySelector("#mood-badge")
-    if polarity > 0.1:
-        mood, style, prefix = "Happy", "bg-emerald-500/20 text-emerald-400", "😊 [AI]: "
-    elif polarity < -0.1:
-        mood, style, prefix = "Angry", "bg-red-500/20 text-red-400", "😠 [AI]: "
-    else:
-        mood, style, prefix = "Neutral", "bg-slate-800 text-slate-400", "🤖 [AI]: "
-    
-    mood_badge.innerText = f"Mood: {mood}"
-    mood_badge.className = f"px-4 py-1 rounded-full text-xs font-bold uppercase border border-white/10 {style}"
-
-    # Prediction
-    try:
-        input_vec = vectorizer.transform([input_text.lower()])
-        prediction = clf.predict(input_vec)[0]
-        reply = responses.get(prediction, responses['unknown'])
-    except:
-        reply = "My neurons are reconfiguring. Try another word."
-
-    append_to_chat("You", input_text, "text-blue-400")
-    append_to_chat(prefix, reply, "text-slate-200")
+    # 1. Add User Message to UI
+    append_message("You", user_input, "user-msg")
     document.querySelector("#user-input").value = ""
 
-def append_to_chat(sender, message, color):
+    # 2. Neural Prediction
+    try:
+        input_vec = vectorizer.transform([user_input.lower()])
+        prediction = clf.predict(input_vec)[0]
+        reply = RESPONSES.get(prediction, RESPONSES["unknown"])
+    except:
+        reply = "My neural engine is still initializing. One moment..."
+
+    # 3. Add AI Message to UI
+    append_message("Neural AI", reply, "ai-msg")
+
+def append_message(sender, text, css_class):
     chat_box = document.querySelector("#chat-box")
     div = document.createElement("div")
-    div.className = "max-w-3xl mx-auto space-y-1 mb-4"
-    div.innerHTML = f"<div class='text-xs font-bold tracking-widest {color}'>{sender}</div>" \
-                    f"<div class='bg-white/5 p-4 rounded-2xl border border-white/5'>{message}</div>"
+    div.className = f"p-4 rounded-2xl max-w-[85%] text-sm shadow-md {css_class}"
+    div.innerHTML = f"<b class='block text-[10px] uppercase mb-1 opacity-50'>{sender}</b>{text}"
     chat_box.appendChild(div)
     chat_box.scrollTop = chat_box.scrollHeight
 
-document.querySelector("#loading").style.display = "none"
+# Run initialization
+init_model()
