@@ -2,90 +2,202 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Taurus v0.1 Test</title>
+    <title>Taurus v0.2 | Generative Web 2.0</title>
     <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <style>
-        body { background-color: #008080; font-family: "Courier New", monospace; font-size: 12px; margin: 20px; color: #000; }
-        
-        .window {
-            background: #c0c0c0;
-            width: 550px;
-            margin: 0 auto;
-            border: 2px solid;
-            border-color: #dfdfdf #0a0a0a #0a0a0a #dfdfdf;
-            padding: 2px;
+        /* FRUTIGER AERO / WEB 2.0 AESTHETICS */
+        body {
+            background: url('https://img.freepik.com/free-vector/abstract-blue-sky-background_1048-2284.jpg'); /* Generic Aero Sky */
+            background-size: cover;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
         }
 
-        .title-bar {
-            background: #000080;
-            padding: 3px 5px;
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.9);
+            border-radius: 12px;
+            display: grid;
+            grid-template-columns: 2fr 1fr; /* Chat vs Graph */
+            width: 900px;
+            height: 600px;
+            overflow: hidden;
+        }
+
+        /* LEFT SIDE: CHAT */
+        .chat-section {
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #ccc;
+            background: linear-gradient(to bottom, #f0f4f9, #dce4ed);
+        }
+
+        .aero-header {
+            background: linear-gradient(to bottom, #eef 0%, #ccf 50%, #bbf 51%, #aae 100%);
+            padding: 15px;
+            border-bottom: 1px solid #889;
+            color: #334;
+            font-weight: bold;
+            text-shadow: 0 1px 0 rgba(255,255,255,0.7);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chat-window {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            font-size: 14px;
+            background: white;
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .message { margin-bottom: 12px; line-height: 1.4; }
+        .msg-ai { color: #0044cc; }
+        .msg-user { color: #333; text-align: right; font-weight: bold; }
+
+        .input-bar {
+            padding: 15px;
+            background: #dce4ed;
+            border-top: 1px solid #fff;
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            border: 1px solid #aab;
+            border-radius: 4px;
+            padding: 8px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+            outline: none;
+        }
+
+        /* GLOSSY BUTTON */
+        .glossy-btn {
+            background: linear-gradient(to bottom, #75caff 0%, #3a9ede 50%, #207cca 51%, #1e5799 100%);
+            border: 1px solid #1e5799;
             color: white;
             font-weight: bold;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        #chat-box {
-            background: #fff;
-            height: 320px;
-            margin: 10px;
-            border: 2px solid;
-            border-color: #808080 #dfdfdf #dfdfdf #808080;
-            overflow-y: scroll;
-            padding: 8px;
-            font-size: 13px;
-        }
-
-        .input-area { padding: 10px; display: flex; gap: 5px; background: #c0c0c0; }
-
-        input {
-            flex-grow: 1;
-            border: 2px solid;
-            border-color: #808080 #dfdfdf #dfdfdf #808080;
-            padding: 4px;
-            background: #fff;
-        }
-
-        .btn {
-            background: #c0c0c0;
-            border: 2px solid;
-            border-color: #dfdfdf #0a0a0a #0a0a0a #dfdfdf;
-            padding: 2px 10px;
+            padding: 0 20px;
+            border-radius: 4px;
             cursor: pointer;
+            text-shadow: 0 -1px 0 rgba(0,0,0,0.3);
+            box-shadow: 0 2px 3px rgba(0,0,0,0.2);
+        }
+        .glossy-btn:hover { filter: brightness(1.1); }
+        .glossy-btn:active { transform: translateY(1px); }
+
+        /* RIGHT SIDE: GRAPH */
+        .stats-section {
+            padding: 20px;
+            background: linear-gradient(to bottom, #ffffff, #eef2f5);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
 
-        .btn:active { border-color: #0a0a0a #dfdfdf #dfdfdf #0a0a0a; }
-
-        .status-bar {
-            border: 1px solid #808080;
-            margin: 5px 10px;
-            padding: 2px;
-            background: #c0c0c0;
-            font-size: 10px;
+        .widget-box {
+            background: white;
+            border: 1px solid #ccd;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
+        
+        h3 { margin: 0 0 10px 0; color: #556; font-size: 12px; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
-<div class="window">
-    <div class="title-bar">
-        <span>Taurus v0.1 Test</span>
-        <div style="font-size: 10px;">[?] [_] [X]</div>
+    <div class="glass-panel">
+        <div class="chat-section">
+            <div class="aero-header">
+                <div style="width:15px; height:15px; background:limegreen; border-radius:50%; box-shadow: inset 0 -2px 5px rgba(0,0,0,0.3);"></div>
+                Taurus v0.2 Gen-AI
+            </div>
+            
+            <div id="chat-box" class="chat-window">
+                <div class="message msg-ai"><b>Taurus:</b> Initializing generative text engine...</div>
+                <div class="message msg-ai"><b>Taurus:</b> Please wait while I parse the unigram database.</div>
+            </div>
+
+            <div class="input-bar">
+                <input type="text" id="user-input" placeholder="Type to generate text..." onkeypress="if(event.key === 'Enter') document.getElementById('send-btn').click()">
+                <button id="send-btn" class="glossy-btn" py-click="process_input">Send</button>
+            </div>
+        </div>
+
+        <div class="stats-section">
+            <div class="widget-box">
+                <h3>Neural Training Loss</h3>
+                <canvas id="trainingChart" width="200" height="150"></canvas>
+            </div>
+            <div class="widget-box" style="flex:1;">
+                <h3>Model Parameters</h3>
+                <div id="params" style="font-size: 11px; color: #666; font-family: monospace;">
+                    > Architecture: Markov-MLP Hybrid<br>
+                    > Vocabulary: Loading...<br>
+                    > Epochs: 0<br>
+                    > Temperature: 0.7
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div id="chat-box">
-        <div>TAURUS SYSTEM LOG: Ready.</div>
-        <div style="color: blue;">[Waiting for Neural Environment...]</div>
-    </div>
+    <script>
+        const ctx = document.getElementById('trainingChart').getContext('2d');
+        const trainingChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Error Rate',
+                    data: [],
+                    borderColor: '#207cca',
+                    backgroundColor: 'rgba(32, 124, 202, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                animation: { duration: 0 },
+                scales: {
+                    x: { display: false },
+                    y: { beginAtZero: true, grid: { display: false } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
 
-    <div class="input-area">
-        <input type="text" id="user-input" autocomplete="off" onkeypress="if(event.key === 'Enter') document.getElementById('send-btn').click()">
-        <button id="send-btn" class="btn" py-click="process_message">Execute</button>
-    </div>
+        // Function for Python to call to update graph
+        window.updateGraph = (epoch, loss) => {
+            trainingChart.data.labels.push(epoch);
+            trainingChart.data.datasets[0].data.push(loss);
+            if(trainingChart.data.labels.length > 20) {
+                trainingChart.data.labels.shift();
+                trainingChart.data.datasets[0].data.shift();
+            }
+            trainingChart.update();
+            
+            const params = document.getElementById('params');
+            params.innerHTML = `> Architecture: Markov-MLP Hybrid<br>> Epochs: ${epoch}<br>> Current Loss: ${loss.toFixed(4)}<br>> Status: Active`;
+        }
+    </script>
 
-    <div class="status-bar" id="status">MODEM STATE: CONNECTED // LOADING data.csv</div>
-</div>
-
-<script type="py" src="./main.py" config="./pyscript.json"></script>
+    <script type="py" src="./main.py" config="./pyscript.json"></script>
 </body>
 </html>
