@@ -3,101 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ML Dashboard | GitHub Pages</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Neural Chatbot Pro</title>
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); }
-    </style>
 </head>
-<body class="bg-slate-900 text-white min-h-screen p-8">
+<body class="bg-[#0b0e14] text-slate-200 min-h-screen flex flex-col">
 
-    <div class="max-w-5xl mx-auto">
-        <header class="mb-10 text-center">
-            <h1 class="text-4xl font-bold text-blue-400">Browser-Based ML Predictor</h1>
-            <p class="text-slate-400">Training a neural network directly on your device.</p>
-        </header>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="glass p-6 rounded-2xl border border-white/10 shadow-xl">
-                <h2 class="text-xl font-semibold mb-4">Controls</h2>
-                <div class="space-y-4">
-                    <button onclick="trainModel()" id="trainBtn" class="w-full bg-blue-600 hover:bg-blue-500 py-3 rounded-lg font-bold transition">
-                        Start Training
-                    </button>
-                    <div id="status" class="text-sm text-yellow-400">Status: Ready to train</div>
-                    <hr class="border-white/10">
-                    <div>
-                        <label class="block text-xs uppercase text-slate-500 mb-1">Input Value (X)</label>
-                        <input type="number" id="predictInput" value="10" class="w-full bg-slate-800 p-2 rounded border border-white/10">
-                    </div>
-                    <button onclick="predict()" class="w-full bg-emerald-600 hover:bg-emerald-500 py-2 rounded-lg font-bold transition">
-                        Predict Output
-                    </button>
-                </div>
-            </div>
-
-            <div class="md:col-span-2 glass p-6 rounded-2xl border border-white/10 shadow-xl">
-                <h2 class="text-xl font-semibold mb-4">Training Progress (Loss)</h2>
-                <canvas id="lossChart" height="150"></canvas>
-            </div>
-        </div>
-
-        <div class="mt-8 glass p-6 rounded-2xl border border-white/10 text-center">
-            <div class="text-slate-400 uppercase text-xs tracking-widest">Prediction Result</div>
-            <div id="result" class="text-5xl font-mono mt-2 text-emerald-400">--</div>
-        </div>
+    <div id="loading" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
+        <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="text-blue-400 font-mono animate-pulse">BOOTING NEURAL ENGINE...</p>
     </div>
 
-    <script>
-        let model;
-        let chart;
+    <nav class="border-b border-white/10 p-4 bg-[#161b22] flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <div class="w-3 h-3 bg-emerald-500 rounded-full animate-ping"></div>
+            <h1 class="font-bold tracking-tighter text-xl">NEURAL-GPT</h1>
+        </div>
+        <div id="mood-badge" class="px-4 py-1 rounded-full bg-slate-800 text-xs font-bold uppercase border border-white/10">
+            Mood: Neutral
+        </div>
+    </nav>
 
-        // Initialize Chart.js
-        const ctx = document.getElementById('lossChart').getContext('2d');
-        chart = new Chart(ctx, {
-            type: 'line',
-            data: { labels: [], datasets: [{ label: 'Loss', data: [], borderColor: '#60a5fa', tension: 0.1 }] },
-            options: { scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' } } } }
-        });
+    <main class="flex-1 overflow-y-auto p-4 md:p-10 space-y-6" id="chat-box">
+        <div class="max-w-3xl mx-auto bg-blue-500/10 border border-blue-500/20 p-4 rounded-2xl text-sm">
+            <b>System:</b> Datasets <i>data.csv</i> and <i>data2.csv</i> loaded. Neural Network trained. How can I help you today?
+        </div>
+    </main>
 
-        async function trainModel() {
-            const btn = document.getElementById('trainBtn');
-            const status = document.getElementById('status');
-            btn.disabled = true;
-            status.innerText = "Status: Training...";
+    <footer class="p-6 bg-[#0b0e14]">
+        <div class="max-w-3xl mx-auto relative flex gap-2">
+            <input type="text" id="user-input" 
+                   class="w-full bg-[#161b22] border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-2xl"
+                   placeholder="Ask me anything...">
+            <button py-click="process_message" class="bg-blue-600 hover:bg-blue-500 px-8 rounded-2xl font-bold transition">Send</button>
+        </div>
+        <p class="text-center text-[10px] text-slate-600 mt-4 uppercase tracking-widest">Powered by Python WebAssembly & Scikit-Learn</p>
+    </footer>
 
-            // Create a simple model: y = 2x - 1
-            model = tf.sequential();
-            model.add(tf.layers.dense({units: 1, inputShape: [1]}));
-            model.compile({loss: 'meanSquaredError', optimizer: 'sgd'});
-
-            // Large-ish synthetic dataset for demonstration
-            const xs = tf.tensor2d([-1, 0, 1, 2, 3, 4, 10, 20, 30], [9, 1]);
-            const ys = tf.tensor2d([-3, -1, 1, 3, 5, 7, 19, 39, 59], [9, 1]);
-
-            await model.fit(xs, ys, {
-                epochs: 100,
-                callbacks: {
-                    onEpochEnd: (epoch, logs) => {
-                        chart.data.labels.push(epoch);
-                        chart.data.datasets[0].data.push(logs.loss);
-                        chart.update();
-                    }
-                }
-            });
-
-            status.innerText = "Status: Training Complete!";
-            btn.classList.add('bg-gray-600');
-        }
-
-        function predict() {
-            if (!model) return alert("Train the model first!");
-            const val = parseFloat(document.getElementById('predictInput').value);
-            const output = model.predict(tf.tensor2d([val], [1, 1]));
-            document.getElementById('result').innerText = output.dataSync()[0].toFixed(2);
-        }
-    </script>
+    <script type="py" src="./main.py" config="./pyscript.json"></script>
 </body>
 </html>
